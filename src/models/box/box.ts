@@ -8,6 +8,7 @@ export default class Box {
   isOpen: boolean;
   tokenIdClosedBox?: string;
   tokenIdOpenBox?: string;
+  observation?:string;
 
   constructor(attrs: {
     id?: string;
@@ -17,6 +18,7 @@ export default class Box {
     isOpen: boolean;
     tokenIdClosedBox?: string;
     tokenIdOpenBox?: string;
+    observation?: string;
   }) {
     this.id = attrs.id;
     this.toyoHash = attrs.toyoHash;
@@ -25,5 +27,6 @@ export default class Box {
     this.isOpen = attrs.isOpen;
     this.tokenIdClosedBox = attrs.tokenIdClosedBox;
     this.tokenIdOpenBox = attrs.tokenIdOpenBox;
+    this.observation = attrs.observation;
   }
 }
