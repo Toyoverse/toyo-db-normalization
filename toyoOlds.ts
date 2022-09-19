@@ -9,8 +9,11 @@ back4app.config();
 const boxRepository = new BoxRepository();
 const mapMetadata = new MapMetadata();
 
-const main = async () =>{
-    const boxes:Box[] = await boxRepository.findOpenBoxesWithObservation();
+const main = async ()=>{
+    console.log('start');
+    const boxes:Box[] = await boxRepository.findBoxesWithOldToyo();
+    console.log(boxes.length);
     await mapMetadata.mapMetadata(boxes);
-};
+}
+
 main();

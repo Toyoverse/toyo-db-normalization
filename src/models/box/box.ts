@@ -1,3 +1,4 @@
+import { Toyo } from "../toyo";
 import { BoxType } from "./types";
 
 export default class Box {
@@ -9,6 +10,7 @@ export default class Box {
   tokenIdClosedBox?: string;
   tokenIdOpenBox?: string;
   observation?:string;
+  toyo?:Toyo;
 
   constructor(attrs: {
     id?: string;
@@ -19,6 +21,7 @@ export default class Box {
     tokenIdClosedBox?: string;
     tokenIdOpenBox?: string;
     observation?: string;
+    toyo?:Toyo;
   }) {
     this.id = attrs.id;
     this.toyoHash = attrs.toyoHash;
@@ -28,5 +31,6 @@ export default class Box {
     this.tokenIdClosedBox = attrs.tokenIdClosedBox;
     this.tokenIdOpenBox = attrs.tokenIdOpenBox;
     this.observation = attrs.observation;
+    this.toyo = attrs.toyo;
   }
 }

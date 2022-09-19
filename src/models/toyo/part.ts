@@ -8,7 +8,7 @@ export class ToyoPart {
     cards?: any[];
     createdAt?: Date;
     updatedAt?: Date;
-    toyoPersona: ToyoPersona;
+    toyoPersona: Parse.Object<Parse.Attributes>;
     toyoPiece: ToyoPiece;
     level?: number;
     stats?: Object;
@@ -23,7 +23,7 @@ export class ToyoPart {
         cards?: any[];
         createdAt?: Date;
         updatedAt?: Date;
-        toyoPersona: ToyoPersona;
+        toyoPersona: Parse.Object<Parse.Attributes>;
         toyoPiece: ToyoPiece;
         stats?: Object;
         level?: number;

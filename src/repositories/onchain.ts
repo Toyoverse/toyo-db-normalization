@@ -4,11 +4,11 @@ export class OnchainRepository {
 
     onChain = process.env.THEGRAPH_URL;
 
-    async getTokenSwappedEntitiesByWalletAndTokenId(tokenId: string): Promise<any>{
+    async getTokenOwnerEntityByTokenId(tokenId: string): Promise<any>{
         const query = gql`
         {
             tokenOwnerEntities(
-            first: 500
+            first: 1
             where: {tokenId: "${tokenId}"}
           ) {
             typeId,

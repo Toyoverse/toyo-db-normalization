@@ -1,8 +1,9 @@
 import * as fs from 'fs';
 
-export function tokenIdWithObservation(observation:string):string{
-    let tokenId = observation.substring(18,23);
-    if (tokenId.charAt(4) === " ") tokenId = tokenId.substring(0,4);
+export function tokenIdValue(observation:string):string{
+    let tokenId:string;
+    if (observation) tokenId = observation.substring(18,23);
+    if (tokenId && tokenId.charAt(4) === " ") tokenId = tokenId.substring(0,4);
     return tokenId;
 }
 export function generateFiles(msgList:string[]){
