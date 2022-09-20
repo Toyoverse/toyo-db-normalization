@@ -4,7 +4,7 @@ import { ToyoPersona } from "./persona";
 export class Toyo {
     objectId?: string;
     name: string;
-    toyoPersonaOrigin: ToyoPersona;
+    toyoPersonaOrigin: Parse.Object<Parse.Attributes>;
     parts?: ToyoPart[];
     transactionHash?: string;
     tokenId?: string;
@@ -18,7 +18,7 @@ export class Toyo {
 
     constructor(attrs: {
         name: string;
-        toyoPersonaOrigin: ToyoPersona;
+        toyoPersonaOrigin: Parse.Object<Parse.Attributes>;
         parts?: ToyoPart[];
         transactionHash?: string;
         tokenId?: string;

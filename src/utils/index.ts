@@ -1,4 +1,7 @@
+import * as path from "path";
 import * as fs from 'fs';
+
+const folder = process.env.LOCAL_FILES_FOLDER;
 
 export function tokenIdValue(observation:string):string{
     let tokenId:string;
@@ -7,7 +10,7 @@ export function tokenIdValue(observation:string):string{
     return tokenId;
 }
 export function generateFiles(msgList:string[]){
-    const filePath:string = "./files";
+    const filePath = path.join(folder, "logs" + ".json");
     const objString = JSON.stringify(msgList, null, 2);
     
     fs.writeFileSync(filePath, objString, 'utf-8');

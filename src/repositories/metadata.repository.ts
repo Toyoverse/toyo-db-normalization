@@ -7,7 +7,7 @@ export class MetadataRepository {
     this.folder = process.env.LOCAL_FILES_FOLDER || "./files";
   }
 
-  async save(filename: string, metadata: object) {//filename = tokenId
+  async save(filename: string, metadata: object) {
     if (!fs.existsSync(this.folder)) {
       fs.mkdirSync(this.folder);
     }

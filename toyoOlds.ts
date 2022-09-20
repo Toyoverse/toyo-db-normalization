@@ -12,7 +12,6 @@ const mapMetadata = new MapMetadata();
 const main = async ()=>{
     console.log('start');
     const boxes:Box[] = await boxRepository.findBoxesWithOldToyo();
-    console.log(boxes.length);
     await mapMetadata.mapMetadata(boxes);
 }
 

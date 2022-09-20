@@ -88,7 +88,32 @@ export class BuildParts{
         const maxLevel: number | undefined = Math.max(...levels);
         return {parts, toyoLevel: maxLevel};
     }
+    returnSumParts(parts:ToyoPart[]): Record<string, number>{
+        const allPartsStats: Record<string, number> = {
+            vitality: 0,
+            resistance: 0,
+            resilience: 0,
+            physicalStrength: 0,
+            cyberForce: 0,
+            technique: 0,
+            analysis: 0,
+            agility: 0,
+            speed: 0,
+            precision: 0,
+            stamina: 0,
+            luck: 0,
+        };
+        for (const item of parts){
+            for (const key of Object.keys(item.stats)){
+                if (key !== "heartbond"){
+                    allPartsStats[key] += item.stats[key];
+                }
+            }
+        }
+        return allPartsStats;
+    }
 }
+
 function _mapLevel(rarity: number): number {
     let levels = [];
     let index: number;
@@ -159,3 +184,4 @@ function _mapSumStats(level: number): number {
 }
 const _mapRandomStat = (minSum: number, maxSum: number) =>
     Math.floor(Math.random() * (maxSum - minSum + 1) + minSum);
+

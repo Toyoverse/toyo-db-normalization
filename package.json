@@ -6,6 +6,7 @@
   "scripts": {
     "start": "ts-node index.ts",
     "startMock":"ts-node mockBox.ts",
+    "startMockToyo":"ts-node mockToyo.ts",
     "startToyo": "ts-node toyoOlds.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

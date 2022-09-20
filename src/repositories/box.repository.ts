@@ -30,7 +30,7 @@ export class BoxRepository{
         boxesQuery.doesNotExist("toyoHash");
         boxesQuery.exists("toyo");
 
-        const result = await boxesQuery.include('toyo').findAll();//retirar limit e alterar find para findAll
+        const result = await boxesQuery.include('toyo').findAll();
         const box:Box[]=[];
         for(const item of result){
             box.push(await this.toModel(item));
@@ -42,7 +42,7 @@ export class BoxRepository{
         const boxesQuery = new Parse.Query(this.ParseCls);
         boxesQuery.equalTo("tokenId", tokenId);
 
-        const result = await boxesQuery.first();
+        const result = await boxesQuery.include('toyo').include('parts').first();
     
         return await this.toModel(result);
     }

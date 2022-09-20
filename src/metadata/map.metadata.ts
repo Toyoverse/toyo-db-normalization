@@ -10,12 +10,14 @@ import Box from "../models/box/box";
 import { Toyo, ToyoPersona } from "../models/toyo";
 import { MetadataRepository } from "../repositories/metadata.repository";
 import { ToyoPart } from "../models/toyo/part";
+import { BuildParts } from "./build.parts"
 
 back4app.config();
 
 const toyoRepository = new ToyoRepository();
 const onchainRepository = new OnchainRepository();
 const metadataRepository = new MetadataRepository();
+const buildParts = new BuildParts();
 
 export class MapMetadata {
   async mapMetadata(boxes: Box[]) {
@@ -24,9 +26,7 @@ export class MapMetadata {
       let tokenId: string = item.observation
         ? tokenIdValue(item.observation)
         : item.toyo.tokenId;
-      const toyo: Toyo = item.toyo
-        ? item.toyo
-        : await toyoRepository.findByTokenId(tokenId);
+      const toyo: Toyo = await toyoRepository.findByTokenId(tokenId);
       console.log(tokenId);
       const onChain: TokenOwnerEntities[] =
         await onchainRepository.getTokenOwnerEntityByTokenId(tokenId);
@@ -39,20 +39,23 @@ export class MapMetadata {
         .then(async (result) => {
           if (result.data) {
             const metadata: Metadata = result.data;
+            //TO DO
+            //um metodo para verificar se o metadata igual ao toyo, se não tiver atualizar o metadata
             if (toyo && toyo.name !== metadata.name) {
-              toyoRepository.updateToyo(toyo, metadata); //TO DO
+              toyoRepository.updateToyo(toyo, metadata);
             } else if (!toyo && onChain.length > 0) {
-                await toyoRepository.save(metadata, onChain[0]);
+              await toyoRepository.save(metadata, onChain[0]);
               msgList.push(
-                "TokenId: " + tokenId + " metadata ok, but toyo not found. Toyo was created" 
+                "TokenId: " +
+                  tokenId +
+                  " metadata ok, but toyo not found. Toyo was created"
               );
             }
             console.log(result.statusText);
             console.log(metadata.name);
           } else if (toyo) {
-            //TO DO
-            //toyo.toyoMetadata = this.generateMetadata(toyo.toyoPersonaOrigin, toyo.parts, toyo.level);
-            //metadataRepository.save(tokenId,toyo.toyoMetadata);
+            toyo.toyoMetadata = this.generateMetadata(toyo.toyoPersonaOrigin, toyo.parts, toyo.level);
+            metadataRepository.save(tokenId,toyo.toyoMetadata);
             msgList.push(
               "TokenId: " + tokenId + " metadata undefined, but found in the db"
             );
@@ -69,54 +72,53 @@ export class MapMetadata {
         })
         .catch(async (err) => {
           if (toyo) {
-            console.log(err.response.status);
-            console.log(err.response.statusText);
-            //TO DO
-            /*toyo.toyoMetadata = this.generateMetadata(toyo.toyoPersonaOrigin, allPartsStats, toyo.level);
-            metadataRepository.save(tokenId,toyo.toyoMetadata);*/
+            console.log(err.code);
+            
+            toyo.toyoMetadata = this.generateMetadata(toyo.toyoPersonaOrigin, toyo.parts, toyo.level);
+            metadataRepository.save(tokenId,toyo.toyoMetadata);
             msgList.push(
-              "TokenId: " + tokenId + " Not found metadata, but found in the db"
+              "TokenId: " + tokenId + " " + err.code + ", but found in the db"
             );
           } else if (onChain.length > 0) {
             msgList.push(
-              "TokenId: " +
-                tokenId +
-                " Not found metadata, but found in the onChain, typeId: " +
+              "TokenId: " + tokenId + " " + err.code +
+                " , but found in the onChain, typeId: " +
                 onChainBox[0].typeId
             );
           } else {
-            msgList.push("TokenId: " + tokenId + " Not found metadata");
+            msgList.push("TokenId: " + tokenId + " " + err.code);
           }
         });
     }
     generateFiles(msgList);
   }
   private generateMetadata(
-    toyoPersona: ToyoPersona,
-    toyoStats: Record<string, number>,
+    toyoPersona: Parse.Object<Parse.Attributes>,
+    toyoParts: ToyoPart[],
     toyoLevel: number
   ) {
+    const toyoStats: Record<string, number> = buildParts.returnSumParts(toyoParts);
     return {
-      name: toyoPersona.name,
-      description: toyoPersona.description,
-      image: toyoPersona.thumbnail,
-      animation_url: toyoPersona.video,
+      name: toyoPersona.get("name"),
+      description: toyoPersona.get("description"),
+      image: toyoPersona.get("thumbnail"),
+      animation_url: toyoPersona.get("video"),
       attributes: [
         {
           trait_type: "Type",
-          value: toyoLevel,
+          value: 9,
         },
         {
           trait_type: "Toyo",
-          value: toyoPersona.name,
+          value: toyoPersona.get("name"),
         },
         {
           trait_type: "Region",
-          value: toyoPersona.region,
+          value: toyoPersona.get("region"),
         },
         {
           trait_type: "Rarity",
-          value: toyoPersona.rarity,
+          value: toyoPersona.get("rarity"),
         },
         {
           display_type: "number",
@@ -181,45 +183,5 @@ export class MapMetadata {
       ],
     };
   }
-  private justTheStats(parts: ToyoPart[]) {
-    let allPartsStats: Record<string, number> = {
-      vitality: 0,
-      resistance: 0,
-      resilience: 0,
-      physicalStrength: 0,
-      cyberForce: 0,
-      technique: 0,
-      analysis: 0,
-      agility: 0,
-      speed: 0,
-      precision: 0,
-      stamina: 0,
-      luck: 0,
-    };
-    let justStats = [
-      { stat: "vitality", value: 1 },
-      { stat: "resistance", value: 1 },
-      { stat: "resilience", value: 1 },
-      { stat: "physicalStrength", value: 1 },
-      { stat: "cyberForce", value: 1 },
-      { stat: "technique", value: 1 },
-      { stat: "analysis", value: 1 },
-      { stat: "agility", value: 1 },
-      { stat: "speed", value: 1 },
-      { stat: "precision", value: 1 },
-      { stat: "stamina", value: 1 },
-      { stat: "luck", value: 1 },
-    ];
-    for (const item of justStats) {
-    }
-  }
-  /*private findTokenId(box: Box): string{
-    let tokenId:string;
-    if (box.observation){
-        tokenId = tokenIdValue(box.observation);
-    } else{
-        tokenId = box.toyo.tokenId;
-    }
-    return tokenId;
-  }*/
 }
+
