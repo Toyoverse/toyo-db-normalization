@@ -1,11 +1,10 @@
-import { request, gql } from 'graphql-request';
+import { request, gql } from "graphql-request";
 
 export class OnchainRepository {
+  onChain = process.env.THEGRAPH_URL;
 
-    onChain = process.env.THEGRAPH_URL;
-
-    async getTokenOwnerEntityByTokenId(tokenId: string): Promise<any>{
-        const query = gql`
+  async getTokenOwnerEntityByTokenId(tokenId: string): Promise<any> {
+    const query = gql`
         {
             tokenOwnerEntities(
             first: 1
@@ -20,11 +19,8 @@ export class OnchainRepository {
             }
         }
         `;
-        const data: any = await request(
-            this.onChain,
-            query,
-          );
-      
-          return data.tokenOwnerEntities;
-    }
+    const data: any = await request(this.onChain, query);
+
+    return data.tokenOwnerEntities;
+  }
 }

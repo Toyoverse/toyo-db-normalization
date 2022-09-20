@@ -8,6 +8,7 @@ export function tokenIdValue(observation:string):string{
     if (observation) tokenId = observation.substring(18,23);
     if (tokenId && tokenId.charAt(4) === " ") tokenId = tokenId.substring(0,4);
     return tokenId;
+    
 }
 export function generateFiles(msgList:string[]){
     const filePath = path.join(folder, "logs" + ".json");

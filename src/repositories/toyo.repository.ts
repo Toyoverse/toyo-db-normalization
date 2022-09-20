@@ -14,8 +14,11 @@ export class ToyoRepository {
     const toyoQuery = new Parse.Query(this.ParseCls);
     toyoQuery.equalTo("tokenId", tokenId);
 
-    const result = await toyoQuery.include("parts").include("toyoPersonaOrigin").first();
-    const resultPart = await result.relation('parts').query().find();
+    const result = await toyoQuery
+      .include("parts")
+      .include("toyoPersonaOrigin")
+      .first();
+    const resultPart = await result.relation("parts").query().find();
 
     if (result) return await this.toModel(result, resultPart);
     return undefined;
@@ -59,7 +62,10 @@ export class ToyoRepository {
       }
     }
   }
-  async toModel(parseObject: Parse.Object<Parse.Attributes>, parseParts?:Parse.Object<Parse.Attributes>[]): Promise<Toyo> {
+  async toModel(
+    parseObject: Parse.Object<Parse.Attributes>,
+    parseParts?: Parse.Object<Parse.Attributes>[]
+  ): Promise<Toyo> {
     return new Toyo({
       name: parseObject.get("name"),
       toyoPersonaOrigin: parseObject.get("toyoPersonaOrigin"),
@@ -70,9 +76,7 @@ export class ToyoRepository {
       hasTenParts: parseObject.get("hasTenParts"),
       toyoMetadata: parseObject.get("toyoMetadata"),
       level: parseObject.get("level"),
-      parts: parseParts
-        ? await this.partsToyo(parseParts)
-        : undefined,
+      parts: parseParts ? await this.partsToyo(parseParts) : undefined,
     });
   }
   async findPartsById(id: string): Promise<ToyoPart> {

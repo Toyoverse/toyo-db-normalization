@@ -10,7 +10,7 @@ import Box from "../models/box/box";
 import { Toyo, ToyoPersona } from "../models/toyo";
 import { MetadataRepository } from "../repositories/metadata.repository";
 import { ToyoPart } from "../models/toyo/part";
-import { BuildParts } from "./build.parts"
+import { BuildParts } from "./build.parts";
 
 back4app.config();
 
@@ -39,8 +39,19 @@ export class MapMetadata {
         .then(async (result) => {
           if (result.data) {
             const metadata: Metadata = result.data;
-            //TO DO
-            //um metodo para verificar se o metadata igual ao toyo, se não tiver atualizar o metadata
+            const toyoStats: Record<string, number> = buildParts.returnSumParts(
+              toyo.parts
+            );
+            if (!this.isCorrectMetadata(metadata, toyoStats)) {
+              toyo.toyoMetadata = this.generateMetadata(
+                toyo.toyoPersonaOrigin,
+                toyo.parts
+              );
+              metadataRepository.save(tokenId, toyo.toyoMetadata);
+              msgList.push(
+                "TokenId: " + tokenId + " metadata wrong, metadata was updated"
+              );
+            }
             if (toyo && toyo.name !== metadata.name) {
               toyoRepository.updateToyo(toyo, metadata);
             } else if (!toyo && onChain.length > 0) {
@@ -54,8 +65,11 @@ export class MapMetadata {
             console.log(result.statusText);
             console.log(metadata.name);
           } else if (toyo) {
-            toyo.toyoMetadata = this.generateMetadata(toyo.toyoPersonaOrigin, toyo.parts, toyo.level);
-            metadataRepository.save(tokenId,toyo.toyoMetadata);
+            toyo.toyoMetadata = this.generateMetadata(
+              toyo.toyoPersonaOrigin,
+              toyo.parts
+            );
+            metadataRepository.save(tokenId, toyo.toyoMetadata);
             msgList.push(
               "TokenId: " + tokenId + " metadata undefined, but found in the db"
             );
@@ -73,15 +87,21 @@ export class MapMetadata {
         .catch(async (err) => {
           if (toyo) {
             console.log(err.code);
-            
-            toyo.toyoMetadata = this.generateMetadata(toyo.toyoPersonaOrigin, toyo.parts, toyo.level);
-            metadataRepository.save(tokenId,toyo.toyoMetadata);
+
+            toyo.toyoMetadata = this.generateMetadata(
+              toyo.toyoPersonaOrigin,
+              toyo.parts
+            );
+            metadataRepository.save(tokenId, toyo.toyoMetadata);
             msgList.push(
               "TokenId: " + tokenId + " " + err.code + ", but found in the db"
             );
           } else if (onChain.length > 0) {
             msgList.push(
-              "TokenId: " + tokenId + " " + err.code +
+              "TokenId: " +
+                tokenId +
+                " " +
+                err.code +
                 " , but found in the onChain, typeId: " +
                 onChainBox[0].typeId
             );
@@ -94,10 +114,10 @@ export class MapMetadata {
   }
   private generateMetadata(
     toyoPersona: Parse.Object<Parse.Attributes>,
-    toyoParts: ToyoPart[],
-    toyoLevel: number
+    toyoParts: ToyoPart[]
   ) {
-    const toyoStats: Record<string, number> = buildParts.returnSumParts(toyoParts);
+    const toyoStats: Record<string, number> =
+      buildParts.returnSumParts(toyoParts);
     return {
       name: toyoPersona.get("name"),
       description: toyoPersona.get("description"),
@@ -183,5 +203,17 @@ export class MapMetadata {
       ],
     };
   }
+  private isCorrectMetadata(
+    metadata: Metadata,
+    toyoStats: Record<string, number>
+  ): boolean {
+    for (let i = 4; i <= 15; i++) {
+      const stats: string = metadata.attributes[i]["trait_type"];
+      let statsConvert = stats[0].toLowerCase() + stats.substring(1);
+      if (statsConvert === "strength") statsConvert = "physicalStrength";
+      if (toyoStats[statsConvert] != metadata.attributes[i]["value"])
+        return false;
+    }
+    return true;
+  }
 }
-
