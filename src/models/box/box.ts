@@ -1,11 +1,11 @@
 import { Toyo } from "../toyo";
-import { BoxType } from "./types";
+import { TypeId } from "./types";
 
 export default class Box {
   id?: string;
   toyoHash: string;
   tokenId?: string;
-  typeId: BoxType;
+  typeId: TypeId;
   isOpen: boolean;
   tokenIdClosedBox?: string;
   tokenIdOpenBox?: string;
@@ -16,7 +16,7 @@ export default class Box {
     id?: string;
     toyoHash: string;
     tokenId?: string;
-    typeId: BoxType;
+    typeId: TypeId;
     isOpen: boolean;
     tokenIdClosedBox?: string;
     tokenIdOpenBox?: string;

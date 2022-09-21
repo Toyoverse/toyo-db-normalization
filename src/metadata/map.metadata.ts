@@ -11,6 +11,7 @@ import { Toyo, ToyoPersona } from "../models/toyo";
 import { MetadataRepository } from "../repositories/metadata.repository";
 import { ToyoPart } from "../models/toyo/part";
 import { BuildParts } from "./build.parts";
+import { TypeId } from "../models/box/types";
 
 back4app.config();
 
@@ -126,7 +127,7 @@ export class MapMetadata {
       attributes: [
         {
           trait_type: "Type",
-          value: 9,
+          value: TypeId.TOYO,
         },
         {
           trait_type: "Toyo",
