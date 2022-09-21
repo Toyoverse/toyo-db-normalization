@@ -46,7 +46,8 @@ export class MapMetadata {
             if (!this.isCorrectMetadata(metadata, toyoStats)) {
               toyo.toyoMetadata = this.generateMetadata(
                 toyo.toyoPersonaOrigin,
-                toyo.parts
+                toyo.parts,
+                toyo.level
               );
               metadataRepository.save(tokenId, toyo.toyoMetadata);
               msgList.push(
@@ -68,7 +69,8 @@ export class MapMetadata {
           } else if (toyo) {
             toyo.toyoMetadata = this.generateMetadata(
               toyo.toyoPersonaOrigin,
-              toyo.parts
+              toyo.parts,
+              toyo.level
             );
             metadataRepository.save(tokenId, toyo.toyoMetadata);
             msgList.push(
@@ -91,7 +93,8 @@ export class MapMetadata {
 
             toyo.toyoMetadata = this.generateMetadata(
               toyo.toyoPersonaOrigin,
-              toyo.parts
+              toyo.parts,
+              toyo.level
             );
             metadataRepository.save(tokenId, toyo.toyoMetadata);
             msgList.push(
@@ -115,7 +118,8 @@ export class MapMetadata {
   }
   private generateMetadata(
     toyoPersona: Parse.Object<Parse.Attributes>,
-    toyoParts: ToyoPart[]
+    toyoParts: ToyoPart[],
+    toyoLevel: number
   ) {
     const toyoStats: Record<string, number> =
       buildParts.returnSumParts(toyoParts);
@@ -127,7 +131,7 @@ export class MapMetadata {
       attributes: [
         {
           trait_type: "Type",
-          value: TypeId.TOYO,
+          value: toyoLevel,
         },
         {
           trait_type: "Toyo",
