@@ -33,11 +33,9 @@ export class ValidationMetadata {
     metadata: ToyoMetadata
   ): Promise<string> {
     let msg: string;
-    //Se tem toyo e metadado e toyo são diferentes
     if (toyo && toyo.name !== metadata.name) {
       await toyoRepository.updateToyo(toyo, metadata);
     }
-    //Se existe toyo
     else if (toyo && !metadata) {
       /*console.log(result.statusText);
       console.log(metadata.name);*/

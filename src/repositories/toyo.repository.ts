@@ -3,9 +3,13 @@ import { ToyoMetadata } from "../models/toyo/metadata";
 import { Toyo, ToyoPersona } from "../models/toyo";
 import { ToyoPart } from "../models/toyo/part";
 import { TokenOwnerEntities } from "../models/onchain/tokenOwnerEntities";
-import { BuildParts } from "../metadata/build.parts";
+import { BuildParts, Metadata } from "../metadata/";
+import { MetadataRepository } from "./";
+
 
 const buildParts = new BuildParts();
+const metadataClass = new Metadata();
+const metadataRepository = new MetadataRepository();
 
 export class ToyoRepository {
   ParseCls = Parse.Object.extend("Toyo", Toyo);
@@ -47,19 +51,46 @@ export class ToyoRepository {
 
     result.set("name", metadata.name);
     result.set("toyoPersonaOrigin", resultPersona);
+    const { parts, toyoLevel } = await this.partUpdatePersonaAndPArts(
+      result.get("parts"),
+      resultPersona
+    );
+    if (toyoLevel) {
+      result.set("level", toyoLevel);
+      result.set("oldToyoMetadata", metadata);
+      result.set(
+        "toyoMetadata",
+        metadataClass.generateMetadata(resultPersona, parts, toyoLevel)
+      );
+      await metadataRepository.save(toyo.tokenId, toyo.toyoMetadata);
+    }
 
-    await this.partUpdatePersona(result.get("parts"), resultPersona);
     await result.save();
   }
-  private async partUpdatePersona(
-    parts: Parse.Object<Parse.Attributes>[],
+  private async partUpdatePersonaAndPArts(
+    partsParse: Parse.Object<Parse.Attributes>[],
     persona: Parse.Object<Parse.Attributes>
   ) {
-    if (parts && parts.length > 0) {
-      for (const part of parts) {
-        part.set("toyoPersona", persona);
-        await part.save();
+    try {
+      if (partsParse[0].get("rarity") !== persona.get("rarity")) {
+        const { parts, toyoLevel } = buildParts.buildParts(persona);
+        await this.updateParts(parts, partsParse);
+        return { parts, toyoLevel };
+      } else {
+        for (const part of partsParse) {
+          const ToyoParts = Parse.Object.extend("ToyoParts", ToyoPart);
+          const toyoPartsQuery = new Parse.Query(ToyoParts);
+
+          toyoPartsQuery.equalTo("objectId", part.id);
+          const resultQuery = await toyoPartsQuery.first();
+
+          resultQuery.set("toyoPersona", persona);
+          await resultQuery.save();
+        }
+        return undefined;
       }
+    } catch {
+      throw new Error("Error saving parts");
     }
   }
   async toModel(
@@ -127,6 +158,32 @@ export class ToyoRepository {
       partsDB.push(toyoParts);
     }
     return partsDB;
+  }
+  private async updateParts(
+    parts: ToyoPart[],
+    partsParser: Parse.Object<Parse.Attributes>[]
+  ) {
+    const ToyoParts = Parse.Object.extend("ToyoParts", ToyoPart);
+    const toyoPartsQuery = new Parse.Query(ToyoParts);
+
+    for (const partParser of partsParser) {
+      try {
+        const result = parts.find((part) => {
+          return part.toyoPiece === partParser.get("toyoPiece");
+        });
+        toyoPartsQuery.equalTo("objectId", partParser.id);
+        const resultQuery = await toyoPartsQuery.first();
+        if (result) {
+          resultQuery.set("level", result.level);
+          resultQuery.set("rarityId", result.rarityId);
+          resultQuery.set("rarity", result.rarity);
+          resultQuery.set("stats", result.stats);
+          await resultQuery.save();
+        }
+      } catch {
+        throw new Error("Error saving");
+      }
+    }
   }
   private toyoMapper(
     toyo: Parse.Object<Parse.Attributes>,
