@@ -1,5 +1,5 @@
 import * as Parse from "parse/node";
-import { Metadata } from "../models/toyo/metadata";
+import { ToyoMetadata } from "../models/toyo/metadata";
 import { Toyo, ToyoPersona } from "../models/toyo";
 import { ToyoPart } from "../models/toyo/part";
 import { TokenOwnerEntities } from "../models/onchain/tokenOwnerEntities";
@@ -33,7 +33,7 @@ export class ToyoRepository {
     return undefined;
   }
 
-  async updateToyo(toyo: Toyo, metadata: Metadata) {
+  async updateToyo(toyo: Toyo, metadata: ToyoMetadata) {
     const toyoQuery = new Parse.Query(this.ParseCls);
     toyoQuery.equalTo("tokenId", toyo.tokenId);
 
@@ -87,7 +87,7 @@ export class ToyoRepository {
     const result = await partQuery.first();
     return this.toModelPart(result);
   }
-  async save(metadata: Metadata, onChain: TokenOwnerEntities) {
+  async save(metadata: ToyoMetadata, onChain: TokenOwnerEntities) {
     const ParseToyo = Parse.Object.extend("Toyo", Toyo);
 
     let parseToyo: Parse.Object<Parse.Attributes> = new ParseToyo();
@@ -130,7 +130,7 @@ export class ToyoRepository {
   }
   private toyoMapper(
     toyo: Parse.Object<Parse.Attributes>,
-    metadata: Metadata,
+    metadata: ToyoMetadata,
     onChain: TokenOwnerEntities
   ): Parse.Object<Parse.Attributes> {
     toyo.set("toyoMetadata", metadata);

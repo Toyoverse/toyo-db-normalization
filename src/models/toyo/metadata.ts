@@ -1,4 +1,4 @@
-export class Metadata{
+export class ToyoMetadata{
     name:string;
     description:string;
     image:string;
