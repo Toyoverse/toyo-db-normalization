@@ -143,6 +143,21 @@ export class ToyoRepository {
     console.log("salvando o toyo... " + metadata.name);
     await parseToyo.save();
   }
+  async saveToyoMetadata(toyo: Toyo, oldToyoMetadata:object , toyoMetadata: object ) {
+    try {
+      const toyoQuery = new Parse.Query(this.ParseCls);
+      toyoQuery.equalTo("tokenId", toyo.tokenId);
+
+      const result = await toyoQuery.first();
+
+      result.set("toyoMetadata", toyoMetadata);
+      result.set("oldToyoMetadata", oldToyoMetadata);
+
+      await result.save();
+    } catch {
+      throw new Error("Error saving metadata");
+    }
+  }
   private async setPersona(
     name: string
   ): Promise<Parse.Object<Parse.Attributes>> {

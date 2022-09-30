@@ -22,7 +22,9 @@ export class ValidationMetadata {
         toyo.parts,
         toyo.level
       );
+      toyo.oldToyoMetadata = metadata;
       await metadataRepository.save(toyo.tokenId, toyo.toyoMetadata);
+      await toyoRepository.saveToyoMetadata(toyo, metadata, toyo.toyoMetadata);
       msg =
         "TokenId: " + toyo.tokenId + " metadata wrong, metadata was updated";
     }
