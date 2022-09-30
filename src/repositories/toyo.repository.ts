@@ -6,7 +6,6 @@ import { TokenOwnerEntities } from "../models/onchain/tokenOwnerEntities";
 import { BuildParts, Metadata } from "../metadata/";
 import { MetadataRepository } from "./";
 
-
 const buildParts = new BuildParts();
 const metadataClass = new Metadata();
 const metadataRepository = new MetadataRepository();
@@ -128,6 +127,14 @@ export class ToyoRepository {
     parseToyo.set("toyoPersonaOrigin", parserPersona);
     const { parts, toyoLevel } = buildParts.buildParts(parserPersona);
     parseToyo.set("level", toyoLevel);
+    parseToyo.set(
+      "toyoMetadata",
+      metadataClass.generateMetadata(parserPersona, parts, toyoLevel)
+    );
+    await metadataRepository.save(
+      onChain.tokenId,
+      parseToyo.get("toyoMetadata")
+    );
     const partDB = await this.saveParts(parts, parserPersona);
 
     const partsRelation = parseToyo.relation("parts");
@@ -190,7 +197,7 @@ export class ToyoRepository {
     metadata: ToyoMetadata,
     onChain: TokenOwnerEntities
   ): Parse.Object<Parse.Attributes> {
-    toyo.set("toyoMetadata", metadata);
+    toyo.set("oldToyoMetadata", metadata);
     toyo.set("name", metadata.name);
     toyo.set("transactionHash", onChain.transactionHash);
     toyo.set("tokenId", onChain.tokenId);
