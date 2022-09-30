@@ -43,6 +43,19 @@ export class BoxRepository {
 
     return await this.toModel(result);
   }
+  async updateMetadataBox(box: Box) {
+    try {
+      const boxesQuery = new Parse.Query(this.ParseCls);
+      boxesQuery.equalTo("tokenId", box.tokenId);
+
+      const result = await boxesQuery.first();
+      result.set("updateMetadata", true);
+
+      await result.save();
+    } catch {
+      throw new Error("Erro updating box with metadata");
+    }
+  }
   async toModel(parseObject: Parse.Object<Parse.Attributes>): Promise<Box> {
     return new Box({
       id: parseObject.id,

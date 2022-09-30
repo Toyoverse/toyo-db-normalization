@@ -8,16 +8,12 @@ import { OnchainRepository } from "../repositories/onchain";
 import { TokenOwnerEntities } from "../models/onchain/tokenOwnerEntities";
 import Box from "../models/box/box";
 import { Toyo } from "../models/toyo";
-import { MetadataRepository } from "../repositories/metadata.repository";
-import { BuildParts, Metadata, ValidationMetadata } from "./";
+import { ValidationMetadata } from "./";
 
 back4app.config();
 
 const toyoRepository = new ToyoRepository();
 const onchainRepository = new OnchainRepository();
-const metadataRepository = new MetadataRepository();
-const buildParts = new BuildParts();
-const metadataClass = new Metadata();
 const validationMetadata = new ValidationMetadata();
 
 export class MapMetadata {
@@ -41,21 +37,21 @@ export class MapMetadata {
           if (result.data) {
             const metadata: ToyoMetadata = result.data;
             msgList.push(
-              await validationMetadata.verifyMetdata(metadata, toyo)
+              await validationMetadata.verifyMetdata(metadata, toyo, item)
             );
-            msgList.push(await validationMetadata.verifyToyoMetadata(toyo, metadata));
+            msgList.push(await validationMetadata.verifyToyoMetadata(toyo, metadata, item));
             msgList.push(await validationMetadata.verifyOnchain(
               onChain[0],
               metadata,
               toyo,
-              onChainBox[0].typeId
+              item
             ));
           } else {
             msgList.push("TokenId: " + tokenId + " metadata undefined");
           }
         })
         .catch(async (err) => {
-          msgList.push(await validationMetadata.verifyToyo(toyo, err.code));
+          msgList.push(await validationMetadata.verifyToyo(toyo, err.code, item));
 
           if (onChain.length > 0) {
             msgList.push(
