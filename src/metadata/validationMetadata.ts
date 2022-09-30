@@ -32,11 +32,11 @@ export class ValidationMetadata {
         toyo.level
       );
       toyo.oldToyoMetadata = metadata;
+      msg =
+        " TokenId: " + toyo.tokenId + " metadata wrong, metadata was updated";
       await metadataRepository.save(toyo.tokenId, toyo.toyoMetadata);
       await toyoRepository.saveToyoMetadata(toyo, metadata, toyo.toyoMetadata);
-      await boxRepository.updateMetadataBox(box);
-      msg =
-        "TokenId: " + toyo.tokenId + " metadata wrong, metadata was updated";
+      await boxRepository.updateMetadataBox(box, msg);
     }
     return msg;
   }
@@ -47,7 +47,9 @@ export class ValidationMetadata {
   ): Promise<string> {
     let msg: string;
     if (toyo && toyo.name !== metadata.name) {
-      await toyoRepository.updateToyo(toyo, metadata, box);
+        msg =
+        " TokenId: " + toyo.tokenId + " metadata different from toyo. toyo has been updated according to the metadata";
+      await toyoRepository.updateToyo(toyo, metadata, box, msg);
     } else if (toyo && !metadata) {
       /*console.log(result.statusText);
       console.log(metadata.name);*/
@@ -56,10 +58,10 @@ export class ValidationMetadata {
         toyo.parts,
         toyo.level
       );
-      await metadataRepository.save(toyo.tokenId, toyo.toyoMetadata);
-      await boxRepository.updateMetadataBox(box);
       msg =
-        "TokenId: " + toyo.tokenId + " metadata undefined, but found in the db";
+        " TokenId: " + toyo.tokenId + " metadata undefined, but found in the db";
+      await metadataRepository.save(toyo.tokenId, toyo.toyoMetadata);
+      await boxRepository.updateMetadataBox(box, msg);
     }
     return msg;
   }
@@ -71,17 +73,18 @@ export class ValidationMetadata {
   ): Promise<string> {
     let msg: string;
     if (!toyo && onChain) {
-      await toyoRepository.save(metadata, onChain, box);
-      msg =
-        "TokenId: " +
+        msg =
+        " TokenId: " +
         onChain.tokenId +
         " metadata ok, but toyo not found. Toyo was created";
+      await toyoRepository.save(metadata, onChain, box, msg);
     } else if (onChain) {
       msg =
-        "TokenId: " +
+        " TokenId: " +
         toyo.tokenId +
         " metadata undefined, but found in the onChain, typeId: " +
         box.typeId;
+        await boxRepository.updateMetadataBox(box, msg, false);// TO DO
     }
     return msg;
   }
@@ -94,9 +97,9 @@ export class ValidationMetadata {
         toyo.parts,
         toyo.level
       );
+      msg = " TokenId: " + toyo.tokenId + " " + err + ", but found in the db";
       await metadataRepository.save(toyo.tokenId, toyo.toyoMetadata);
-      await boxRepository.updateMetadataBox(box);
-      msg = "TokenId: " + toyo.tokenId + " " + err + ", but found in the db";
+      await boxRepository.updateMetadataBox(box, msg);
     }
     return msg;
   }
