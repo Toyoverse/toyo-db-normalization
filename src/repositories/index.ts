@@ -1,5 +1,5 @@
-export * from './box.repository';
-export * from './metadata.repository';
-export * from './onchain';
-export * from './toyo.repository'
+export {BoxRepository} from './box.repository';
+export {MetadataRepository} from './metadata.repository';
+export {OnchainRepository} from './onchain';
+export {ToyoRepository} from './toyo.repository'
 

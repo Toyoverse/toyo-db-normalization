@@ -1,33 +1,42 @@
+import * as back4app from "../config/back4app";
 import * as Parse from "parse/node";
 import { ToyoMetadata } from "../models/toyo/metadata";
 import { Toyo, ToyoPersona } from "../models/toyo";
 import { ToyoPart } from "../models/toyo/part";
 import { TokenOwnerEntities } from "../models/onchain/tokenOwnerEntities";
-import { BuildParts, Metadata } from "../metadata/";
-import { MetadataRepository, BoxRepository } from "./";
-import Box from "../models/box/box";
+import { BuildParts } from "../metadata/build.parts";
+import { Metadata } from "../metadata/metadata";
+import { MetadataRepository } from "./metadata.repository";
+
+back4app.config();
 
 const buildParts = new BuildParts();
 const metadataClass = new Metadata();
 const metadataRepository = new MetadataRepository();
-const boxRepository = new BoxRepository();
 
 export class ToyoRepository {
   ParseCls = Parse.Object.extend("Toyo", Toyo);
 
   async findByTokenId(tokenId: string): Promise<Toyo> {
-    const toyoQuery = new Parse.Query(this.ParseCls);
-    toyoQuery.equalTo("tokenId", tokenId);
+    try {
+      const toyoQuery = new Parse.Query(this.ParseCls);
+      toyoQuery.equalTo("tokenId", tokenId);
+      const result = await toyoQuery
+        .include("parts")
+        .include("toyoPersonaOrigin")
+        .first();
 
-    const result = await toyoQuery
-      .include("parts")
-      .include("toyoPersonaOrigin")
-      .first();
-    const resultPart = await result.relation("parts").query().find();
+      if (result) {
+        const resultPart = await result.relation("parts").query().find();
 
-    if (result) return await this.toModel(result, resultPart);
-    return undefined;
+        return await this.toModel(result, resultPart);
+      }
+      return undefined;
+    } catch {
+      throw new Error("Error returning toyo");
+    }
   }
+
   async findById(id: string): Promise<Toyo> {
     const toyoQuery = new Parse.Query(this.ParseCls);
     toyoQuery.equalTo("objectId", id);
@@ -38,7 +47,7 @@ export class ToyoRepository {
     return undefined;
   }
 
-  async updateToyo(toyo: Toyo, metadata: ToyoMetadata, box: Box, msg: string) {
+  async updateToyo(toyo: Toyo, metadata: ToyoMetadata) {
     const toyoQuery = new Parse.Query(this.ParseCls);
     toyoQuery.equalTo("tokenId", toyo.tokenId);
 
@@ -64,7 +73,6 @@ export class ToyoRepository {
         metadataClass.generateMetadata(resultPersona, parts, toyoLevel)
       );
       await metadataRepository.save(toyo.tokenId, toyo.toyoMetadata);
-      await boxRepository.updateMetadataBox(box, msg);
     }
 
     await result.save();
@@ -120,7 +128,10 @@ export class ToyoRepository {
     const result = await partQuery.first();
     return this.toModelPart(result);
   }
-  async save(metadata: ToyoMetadata, onChain: TokenOwnerEntities, box: Box, msg: string) {
+  async save(
+    metadata: ToyoMetadata,
+    onChain: TokenOwnerEntities
+  ): Promise<Parse.Object<Parse.Attributes>> {
     const ParseToyo = Parse.Object.extend("Toyo", Toyo);
 
     let parseToyo: Parse.Object<Parse.Attributes> = new ParseToyo();
@@ -138,7 +149,6 @@ export class ToyoRepository {
       onChain.tokenId,
       parseToyo.get("toyoMetadata")
     );
-    await boxRepository.updateMetadataBox(box, msg);
     const partDB = await this.saveParts(parts, parserPersona);
 
     const partsRelation = parseToyo.relation("parts");
@@ -146,6 +156,7 @@ export class ToyoRepository {
 
     console.log("salvando o toyo... " + metadata.name);
     await parseToyo.save();
+    return parseToyo;
   }
   async saveToyoMetadata(
     toyo: Toyo,
@@ -159,7 +170,10 @@ export class ToyoRepository {
       const result = await toyoQuery.first();
 
       result.set("toyoMetadata", toyoMetadata);
-      result.set("oldToyoMetadata", oldToyoMetadata);
+      result.set(
+        "oldToyoMetadata",
+        oldToyoMetadata ? oldToyoMetadata : undefined
+      );
 
       await result.save();
     } catch {
