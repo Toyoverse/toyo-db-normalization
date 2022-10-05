@@ -1,28 +1,42 @@
+import * as back4app from "../config/back4app";
 import * as Parse from "parse/node";
-import { Metadata } from "../models/toyo/metadata";
+import { ToyoMetadata } from "../models/toyo/metadata";
 import { Toyo, ToyoPersona } from "../models/toyo";
 import { ToyoPart } from "../models/toyo/part";
 import { TokenOwnerEntities } from "../models/onchain/tokenOwnerEntities";
 import { BuildParts } from "../metadata/build.parts";
+import { Metadata } from "../metadata/metadata";
+import { MetadataRepository } from "./metadata.repository";
+
+back4app.config();
 
 const buildParts = new BuildParts();
+const metadataClass = new Metadata();
+const metadataRepository = new MetadataRepository();
 
 export class ToyoRepository {
   ParseCls = Parse.Object.extend("Toyo", Toyo);
 
   async findByTokenId(tokenId: string): Promise<Toyo> {
-    const toyoQuery = new Parse.Query(this.ParseCls);
-    toyoQuery.equalTo("tokenId", tokenId);
+    try {
+      const toyoQuery = new Parse.Query(this.ParseCls);
+      toyoQuery.equalTo("tokenId", tokenId);
+      const result = await toyoQuery
+        .include("parts")
+        .include("toyoPersonaOrigin")
+        .first();
 
-    const result = await toyoQuery
-      .include("parts")
-      .include("toyoPersonaOrigin")
-      .first();
-    const resultPart = await result.relation("parts").query().find();
+      if (result) {
+        const resultPart = await result.relation("parts").query().find();
 
-    if (result) return await this.toModel(result, resultPart);
-    return undefined;
+        return await this.toModel(result, resultPart);
+      }
+      return undefined;
+    } catch {
+      throw new Error("Error returning toyo");
+    }
   }
+
   async findById(id: string): Promise<Toyo> {
     const toyoQuery = new Parse.Query(this.ParseCls);
     toyoQuery.equalTo("objectId", id);
@@ -33,7 +47,7 @@ export class ToyoRepository {
     return undefined;
   }
 
-  async updateToyo(toyo: Toyo, metadata: Metadata) {
+  async updateToyo(toyo: Toyo, metadata: ToyoMetadata) {
     const toyoQuery = new Parse.Query(this.ParseCls);
     toyoQuery.equalTo("tokenId", toyo.tokenId);
 
@@ -47,19 +61,46 @@ export class ToyoRepository {
 
     result.set("name", metadata.name);
     result.set("toyoPersonaOrigin", resultPersona);
+    const { parts, toyoLevel } = await this.partUpdatePersonaAndPArts(
+      result.get("parts"),
+      resultPersona
+    );
+    if (toyoLevel) {
+      result.set("level", toyoLevel);
+      result.set("oldToyoMetadata", metadata);
+      result.set(
+        "toyoMetadata",
+        metadataClass.generateMetadata(resultPersona, parts, toyoLevel)
+      );
+      await metadataRepository.save(toyo.tokenId, toyo.toyoMetadata);
+    }
 
-    await this.partUpdatePersona(result.get("parts"), resultPersona);
     await result.save();
   }
-  private async partUpdatePersona(
-    parts: Parse.Object<Parse.Attributes>[],
+  private async partUpdatePersonaAndPArts(
+    partsParse: Parse.Object<Parse.Attributes>[],
     persona: Parse.Object<Parse.Attributes>
   ) {
-    if (parts && parts.length > 0) {
-      for (const part of parts) {
-        part.set("toyoPersona", persona);
-        await part.save();
+    try {
+      if (partsParse[0].get("rarity") !== persona.get("rarity")) {
+        const { parts, toyoLevel } = buildParts.buildParts(persona);
+        await this.updateParts(parts, partsParse);
+        return { parts, toyoLevel };
+      } else {
+        for (const part of partsParse) {
+          const ToyoParts = Parse.Object.extend("ToyoParts", ToyoPart);
+          const toyoPartsQuery = new Parse.Query(ToyoParts);
+
+          toyoPartsQuery.equalTo("objectId", part.id);
+          const resultQuery = await toyoPartsQuery.first();
+
+          resultQuery.set("toyoPersona", persona);
+          await resultQuery.save();
+        }
+        return undefined;
       }
+    } catch {
+      throw new Error("Error saving parts");
     }
   }
   async toModel(
@@ -87,7 +128,10 @@ export class ToyoRepository {
     const result = await partQuery.first();
     return this.toModelPart(result);
   }
-  async save(metadata: Metadata, onChain: TokenOwnerEntities) {
+  async save(
+    metadata: ToyoMetadata,
+    onChain: TokenOwnerEntities
+  ): Promise<Parse.Object<Parse.Attributes>> {
     const ParseToyo = Parse.Object.extend("Toyo", Toyo);
 
     let parseToyo: Parse.Object<Parse.Attributes> = new ParseToyo();
@@ -97,6 +141,14 @@ export class ToyoRepository {
     parseToyo.set("toyoPersonaOrigin", parserPersona);
     const { parts, toyoLevel } = buildParts.buildParts(parserPersona);
     parseToyo.set("level", toyoLevel);
+    parseToyo.set(
+      "toyoMetadata",
+      metadataClass.generateMetadata(parserPersona, parts, toyoLevel)
+    );
+    await metadataRepository.save(
+      onChain.tokenId,
+      parseToyo.get("toyoMetadata")
+    );
     const partDB = await this.saveParts(parts, parserPersona);
 
     const partsRelation = parseToyo.relation("parts");
@@ -104,6 +156,29 @@ export class ToyoRepository {
 
     console.log("salvando o toyo... " + metadata.name);
     await parseToyo.save();
+    return parseToyo;
+  }
+  async saveToyoMetadata(
+    toyo: Toyo,
+    oldToyoMetadata: object,
+    toyoMetadata: object
+  ) {
+    try {
+      const toyoQuery = new Parse.Query(this.ParseCls);
+      toyoQuery.equalTo("tokenId", toyo.tokenId);
+
+      const result = await toyoQuery.first();
+
+      result.set("toyoMetadata", toyoMetadata);
+      result.set(
+        "oldToyoMetadata",
+        oldToyoMetadata ? oldToyoMetadata : undefined
+      );
+
+      await result.save();
+    } catch {
+      throw new Error("Error saving metadata");
+    }
   }
   private async setPersona(
     name: string
@@ -128,12 +203,38 @@ export class ToyoRepository {
     }
     return partsDB;
   }
+  private async updateParts(
+    parts: ToyoPart[],
+    partsParser: Parse.Object<Parse.Attributes>[]
+  ) {
+    const ToyoParts = Parse.Object.extend("ToyoParts", ToyoPart);
+    const toyoPartsQuery = new Parse.Query(ToyoParts);
+
+    for (const partParser of partsParser) {
+      try {
+        const result = parts.find((part) => {
+          return part.toyoPiece === partParser.get("toyoPiece");
+        });
+        toyoPartsQuery.equalTo("objectId", partParser.id);
+        const resultQuery = await toyoPartsQuery.first();
+        if (result) {
+          resultQuery.set("level", result.level);
+          resultQuery.set("rarityId", result.rarityId);
+          resultQuery.set("rarity", result.rarity);
+          resultQuery.set("stats", result.stats);
+          await resultQuery.save();
+        }
+      } catch {
+        throw new Error("Error saving");
+      }
+    }
+  }
   private toyoMapper(
     toyo: Parse.Object<Parse.Attributes>,
-    metadata: Metadata,
+    metadata: ToyoMetadata,
     onChain: TokenOwnerEntities
   ): Parse.Object<Parse.Attributes> {
-    toyo.set("toyoMetadata", metadata);
+    toyo.set("oldToyoMetadata", metadata);
     toyo.set("name", metadata.name);
     toyo.set("transactionHash", onChain.transactionHash);
     toyo.set("tokenId", onChain.tokenId);

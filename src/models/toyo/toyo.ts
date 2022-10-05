@@ -15,6 +15,7 @@ export class Toyo {
   createdAt?: Date;
   updatedAt?: Date;
   level?: number;
+  oldToyoMetadata?:any;
 
   constructor(attrs: {
     name: string;
@@ -29,6 +30,7 @@ export class Toyo {
     createdAt?: Date;
     updatedAt?: Date;
     level?: number;
+    oldToyoMetadata?:any;
   }) {
     this.toyoPersonaOrigin = attrs.toyoPersonaOrigin;
     this.name = attrs.name;
@@ -42,5 +44,6 @@ export class Toyo {
     this.createdAt = attrs.createdAt;
     this.updatedAt = attrs.updatedAt;
     this.level = attrs.level;
+    this.level = attrs.oldToyoMetadata;
   }
 }
